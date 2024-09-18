@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lokanta Listesi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+    <!-- Navigasyon çubuğu -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" th:href="@{/}">Ana Sayfa</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <!-- Kullanıcı giriş yapmışsa kullanıcı adı, giriş yapmamışsa Giriş Yap butonu gösterilir -->
+                    <li class="nav-item" sec:authorize="isAuthenticated()">
+                        <span class="navbar-text" th:text="${#authentication.name}">Kullanıcı Adı</span>
+                    </li>
+                    <li class="nav-item" sec:authorize="!isAuthenticated()">
+                        <a class="btn btn-outline-primary ms-2" th:href="@{/login}">Giriş Yap</a>
+                    </li>
+                    <li class="nav-item" sec:authorize="isAuthenticated()">
+                        <a class="btn btn-outline-danger ms-2" th:href="@{/auth/logout}">Çıkış Yap</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Lokanta Listesi -->
+    <div class="container mt-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Lokantalar</h1>
+            <!-- Yalnızca kıdemli kullanıcılar bu butonu görebilecek -->
+            <a sec:authorize="hasAnyRole('SENIOR', 'ADMIN')" th:href="@{/restaurant/new}" class="btn btn-success">Yeni Lokanta Yarat</a>
+        </div>
+
+        <table class="table table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Fotoğraf</th>
+                    <th>Lokanta Adı</th>
+                    <th>Tür</th>
+                    <th>Adres</th>
+                    <th>Ortalama Puan</th>
+                    <th>Detay</th>
+                    <th sec:authorize = "hasAnyRole('SENIOR', 'ADMIN')">Düzenle</th>
+                    <th sec:authorize = "hasRole('ADMIN')">Sil</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="item : ${restaurants}">
+                    <td><img th:src="${item[0].photoUrl}" alt="Fotoğraf" class="rounded" style="width: 50px; height: 50px; object-fit: cover;"></td>
+                    <td th:text="${item[0].name}">Lokanta Adı</td>
+                    <td th:text="${item[0].type}">Tür</td>
+                    <td th:text="${item[0].address}">Adres</td>
+                    <td th:text="${item[1] != null ? item[1] : 'Puanlanmamış'}">Ortalama Puan</td>
+                    <td><a th:href="@{/restaurant/{id}(id=${item[0].id})}" class="btn btn-primary btn-sm">Detay</a></td>
+                    <!-- Düzenle butonu: Yalnızca kıdemli kullanıcılar ve adminler görebilecek -->
+                    <td sec:authorize="hasAnyRole('SENIOR', 'ADMIN')">
+                        <a th:href="@{/restaurant/edit/{id}(id=${item[0].id})}" class="btn btn-warning btn-sm">Düzenle</a>
+                    </td>
+                    <!-- Sil butonu: Yalnızca adminler görebilecek -->
+                    <td sec:authorize="hasRole('ADMIN')">
+                        <form th:action="@{'/api/restaurants/delete/' + ${item[0].id}}" method="post" onsubmit="return confirmDelete(this);">
+                            <input type="hidden" name="_method" value="delete">
+                            <button type="submit" class="btn btn-danger btn-sm">Sil</button>
+                        </form>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function confirmDelete(form) {
+            if (confirm('Bu lokantayı silmek istediğinizden emin misiniz?')) {
+                form.submit();  // Formu gönder
+                setTimeout(function() {
+                    window.location.reload();  // Sayfayı yenile
+                }, 500);  // 500ms sonra sayfayı yenile (isteğin tamamlanmasını beklemek için)
+            }
+            return false;  // Onay mesajından sonra formun tekrar gönderilmesini engelle
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
